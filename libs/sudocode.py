@@ -5,6 +5,7 @@ def get_code(filename):
 	variables = []			#Stores the list of all variables
 	funcs = []		#stores list of all functions and number of args to each func
 	func_args = 0		#variable to store number of args in ever function
+	x=" "                   #variable to function name which can used to find return type when return statement comes
 	file_ptr = open(filename, "r")
 	code_file_ptr = open(filename[0:len(filename)-4]+".c", "w")
 	code_file_ptr.write("#include <stdio.h>\n#include <stdlib.h>\n\n")
@@ -93,7 +94,8 @@ def get_code(filename):
 
 		elif("function" in line_elem):		#check for functions part
 			funcs.append(line_elem[1])	#adding func name to funcs stack
-			return_list = line_elem		#storing the line_elem list vals in return_list to get return type
+			x+=line_elem[1]                  #storing the name of function
+			return_list.append(line_elem)		#storing list of all functions :storing the line_elem list vals in return_list to get return type
 			temp = []
 			#print(line_elem)
 			line_of_code += line_elem[3] + " " + line_elem[1] + "("	#func defn
@@ -123,7 +125,10 @@ def get_code(filename):
 				variables[i] = (variables[i].split(","))[0]
 			if(line_elem[1] in variables):	#check if return var in variables stack
 				index_return = variables.index(line_elem[1])	#getting index of return var name
-				if(variables[index_return-1] == return_list[3]):	#checking types are same or not
+				for each in return_list:     #find the list corresponding to given function
+					if x in each:
+						break;
+				if(variables[index_return-1] == each[3]):	#checking types are same or not
 					line_of_code += " " + variables[index_return]	#then adding to line_of_code
 				else:
 					raise("the return type in function definition and variable type of returned value don't match!")
@@ -138,22 +143,28 @@ def get_code(filename):
 				variables.pop()
 				i += 1
 			line_of_code += "}"
-			return_list = []	#return list set to empty
+			x=" "     #variable for storing name of function is set empty
+			#return_list = []	#return list set to empty
 
 		elif("call" in line_elem):	#to call functions in main
 			num_values = 0
-			if(line_elem[1] in funcs):	#checking if func name is funcs stack
-				line_of_code += line_elem[1] + "("
-				index_num_args = funcs.index(line_elem[1]) + 1
-				index_values = line_elem.index("values")
-				
-				for i in range(index_values+1,len(line_elem)):
-					num_values += 1
-					if(i == len(line_elem)-1):
-						line_of_code += line_elem[i] + ");"
-						break
+			#if(line_elem[1] in funcs):	
+			for func in return_list:
+				if line_elem[1] in func:        #checking if func name is funcs stack
+		                        if void in func:			
+				               line_of_code += line_elem[1] + "("
+		                        else:
+				               lin_of_code+=func[3]+" var = "+line_elem[1] + "("   #capturing returned value to variable var
+				        index_num_args = funcs.index(line_elem[1]) + 1
+				        index_values = line_elem.index("values")
+				        for i in range(index_values+1,len(line_elem)):
+					       num_values += 1
+					       if(i == len(line_elem)-1):
+					       line_of_code += line_elem[i] + ");"
+					             break
 					line_elem[i] = line_elem[i].replace(",","")
 					line_of_code += line_elem[i] + ","
+					break
 			#print(num_values)
 
 		elif("" == line_elem[0]):	#if nothing exists then leave line
